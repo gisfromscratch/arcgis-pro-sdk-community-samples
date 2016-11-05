@@ -1,6 +1,9 @@
 ﻿using ArcGIS.Core.CIM;
+using ArcGIS.Core.Data;
 using ArcGIS.Desktop.Core;
 using ArcGIS.Desktop.Framework;
+using ArcGIS.Desktop.Framework.Threading.Tasks;
+using ArcGIS.Desktop.Mapping;
 using System;
 using System.Collections;
 using System.Collections.Concurrent;
@@ -9,6 +12,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace LayersPane
@@ -21,25 +25,42 @@ namespace LayersPane
         private const string ViewPaneID = "LayersPane_DatasetsPane";
         private const string ViewDefaultPath = "DatasetsPaneViewModel_Pane_View_Path";
 
-        private string _path;
+        private readonly string _path;
+        private readonly FeatureLayer _layer;
+        private long _rowCount;
 
-        private static ConcurrentDictionary<string, DatasetsPaneViewModel> _viewModels;        
+        private static ConcurrentDictionary<FeatureLayer, DatasetsPaneViewModel> _viewModels;        
 
         static DatasetsPaneViewModel()
         {
-            _viewModels = new ConcurrentDictionary<string, DatasetsPaneViewModel>();
+            _viewModels = new ConcurrentDictionary<FeatureLayer, DatasetsPaneViewModel>();
         }
 
         /// <summary>
         /// Creates a new view model and wires up the specified CIM view.
         /// </summary>
         /// <param name="view">The CIM view.</param>
-        /// <param param name="internalId">The internal ID of the pane.</param>
-        public DatasetsPaneViewModel(CIMView view, string internalId) : base(view)
+        /// <param param name="layer">The feature layer of the pane.</param>
+        public DatasetsPaneViewModel(CIMView view, FeatureLayer layer) : base(view)
         {
             _path = view.ViewXML;
-            _viewModels.TryAdd(internalId, this);
-            Caption = string.Format(@"Pane {0}", internalId);
+            _layer = layer;
+            _viewModels.TryAdd(layer, this);
+            Caption = string.Format(@"Pane {0}", layer.Name);
+        }
+
+        public long RowCount
+        {
+            get
+            {
+                return _rowCount;
+            }
+
+            set
+            {
+                SetProperty(ref _rowCount, value, () => RowCount);
+                RaisePropertyChanged();
+            }
         }
 
         public event PropertyChangedEventHandler PropertyChanged = delegate { };
@@ -66,7 +87,19 @@ namespace LayersPane
 
         protected async override Task InitializeAsync()
         {
-            await base.InitializeAsync();
+            await QueuedTask.Run(() =>
+            {
+                var featureClass = _layer.GetFeatureClass();
+                var cursor = featureClass.Search();
+                long rowCount = 0;
+                while (cursor.MoveNext())
+                {
+                    rowCount++;
+                }
+
+                RowCount = rowCount;
+                //Interlocked.Exchange(ref _rowCount, rowCount);
+            });
         }
 
         protected async override Task UninitializeAsync()
@@ -77,36 +110,43 @@ namespace LayersPane
         /// <summary>
         /// Create a new instance of the pane.
         /// </summary>
-        /// <param param name="internalId">The internal ID of the pane.</param>
+        /// <param param name="layer">The feature layer of the pane.</param>
         /// <returns>A new instance or <c>null</c>.</returns>
-        internal static DatasetsPaneViewModel Create(string internalId)
+        internal static DatasetsPaneViewModel Create(FeatureLayer layer)
         {
             var view = new CIMGenericView();
             view.ViewType = ViewPaneID;
             view.ViewXML = ViewDefaultPath;
-            var pane = FrameworkApplication.Panes.Create(ViewPaneID, new object[] { view, internalId });
+            var pane = FrameworkApplication.Panes.Create(ViewPaneID, new object[] { view, layer });
             return pane as DatasetsPaneViewModel;
         }
 
         /// <summary>
         /// Opens the datasets pane.
         /// </summary>
-        /// <param param name="internalId">The internal ID of the pane.</param>
+        /// <param param name="layer">The feature layer of the pane.</param>
         /// <returns>The view model of the datasets pane.</returns>
-        internal static DatasetsPaneViewModel Open(string internalId)
+        internal static DatasetsPaneViewModel Open(FeatureLayer layer)
         {
             DatasetsPaneViewModel viewModel;
-            if (_viewModels.TryGetValue(internalId, out viewModel))
+            if (_viewModels.TryGetValue(layer, out viewModel))
             {
-                // Reference equals?
-                //viewModel = FrameworkApplication.Panes.FindPane(viewModel.InstanceID) as DatasetsPaneViewModel;
-                
-                // Just activate
-                viewModel.Activate();
+                viewModel = FrameworkApplication.Panes.FindPane(viewModel.InstanceID) as DatasetsPaneViewModel;
+                if (null == viewModel)
+                {
+                    // View model was recycled by the framework?
+                    _viewModels.TryRemove(layer, out viewModel);
+                    viewModel = null;
+                }
+                else
+                {
+                    // Just activate
+                    viewModel.Activate();
+                }
             }
             if (null == viewModel)
             {
-                viewModel = Create(internalId);
+                viewModel = Create(layer);
             }
             if (null == viewModel)
             {

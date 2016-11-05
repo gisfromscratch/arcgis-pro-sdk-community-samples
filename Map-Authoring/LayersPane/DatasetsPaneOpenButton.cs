@@ -1,4 +1,5 @@
 ﻿using ArcGIS.Desktop.Framework.Contracts;
+using ArcGIS.Desktop.Mapping;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,9 +15,21 @@ namespace LayersPane
     {
         protected override void OnClick()
         {
-            var random = new Random();
-            var id = random.Next(5).ToString();
-            DatasetsPaneViewModel.Open(id);
+            var activeMapView = MapView.Active;
+            if (null == activeMapView)
+            {
+                return;
+            }
+
+            var selectedLayers = activeMapView.GetSelectedLayers();
+            foreach (var selectedLayer in selectedLayers)
+            {
+                var featureLayer = selectedLayer as FeatureLayer;
+                if (null != featureLayer)
+                {
+                    DatasetsPaneViewModel.Open(featureLayer);
+                }
+            }
         }
     }
 }

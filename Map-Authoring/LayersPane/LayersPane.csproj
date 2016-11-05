@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -40,6 +40,9 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.ServiceModel" />
+    <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -87,6 +90,11 @@
     <AddInContent Include="Images\AddInDesktop32.png" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="DatasetsPaneOpenButton.cs" />
+    <Compile Include="DatasetsPaneView.xaml.cs">
+      <DependentUpon>DatasetsPaneView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="DatasetsPaneViewModel.cs" />
     <Compile Include="Extensions\BooleanToVisibilityConverter.cs" />
     <Compile Include="Extensions\DynamicDataRow.cs" />
     <Compile Include="Extensions\ExtendListView.cs" />
@@ -100,6 +108,10 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
+    <Page Include="DatasetsPaneView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="LayersPane.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>

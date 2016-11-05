@@ -45,11 +45,15 @@
               an empty group-->
         <group id="LayersPane_Group1" caption="Layers Pane Group" appearsOnAddInTab="true">
           <!-- host controls within groups -->
+          <button refID="DatasetsPane_DatasetsPane_OpenButton" size="large" />
           <button refID="LayersPane_LayersPane_OpenButton" size="large" />
         </group>
       </groups>
       <controls>
         <!-- add your controls here -->
+        <button id="DatasetsPane_DatasetsPane_OpenButton" caption="Open DatasetsPane " className="DatasetsPaneOpenButton" loadOnClick="true" smallImage="Images\GenericButtonGreen16.png" largeImage="Images\GenericButtonGreen32.png">
+          <tooltip heading="Open Pane">Open Datasets Pane<disabledText /></tooltip>
+        </button>
         <button id="LayersPane_LayersPane_OpenButton" caption="Open LayersPane " className="LayersPane_OpenButton" loadOnClick="true" smallImage="Images\GenericButtonGreen16.png" largeImage="Images\GenericButtonGreen32.png">
           <tooltip heading="Open Pane">Open Pane<disabledText /></tooltip>
         </button>
@@ -57,6 +61,9 @@
       <panes>
         <pane id="LayersPane_LayersPane" caption="LayersPane " className="LayersPaneViewModel" smallImage="Images\GenericButtonGreen16.png" defaultTab="esri_mapping_homeTab" defaultTool="esri_mapping_navigateTool">
           <content className="LayersPaneView" />
+        </pane>
+        <pane id="LayersPane_DatasetsPane" caption="Datasets Pane" className="DatasetsPaneViewModel" smallImage="Images\GenericButtonGreen16.png" defaultTab="esri_mapping_homeTab" defaultTool="esri_mapping_navigateTool">
+          <content className="DatasetsPaneView" />
         </pane>
       </panes>
     </insertModule>
